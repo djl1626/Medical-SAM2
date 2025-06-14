@@ -22,6 +22,27 @@ from conf import settings
 from func_2d.dataset import *
 from func_2d.utils import *
 
+from sklearn.model_selection import train_test_split
+
+import sys
+
+sys.path.append("./unet")
+
+from GlaucomaDataset import GlaucomaDatasetBoundingBoxes
+
+def update_image_path(path: str) -> str:
+    """
+    Pulls the file name from a file path.
+
+    Args:
+        path (str): file path
+
+    Returns:
+        str: the file name
+    """
+    split_path = path.split("/")
+    return split_path[-1]
+
 
 def main():
     # use bfloat16 for the entire work
@@ -70,6 +91,39 @@ def main():
         nice_train_loader = DataLoader(refuge_train_dataset, batch_size=args.b, shuffle=True, num_workers=2, pin_memory=True)
         nice_test_loader = DataLoader(refuge_test_dataset, batch_size=args.b, shuffle=False, num_workers=2, pin_memory=True)
         '''end'''
+    elif args.dataset == 'ORIGA':
+        # Read in the fundus images and ground truth masks
+        # origa_path = os.path.join('home', 'skk8kc', 'Documents', 'Capstone', "data", "ORIGA")
+        origa_path = "/home/skk8kc/Documents/Capstone/data/ORIGA"
+        images_path = os.path.join(origa_path, "Images_Square")
+        masks_path = os.path.join(origa_path, "Masks_Square")
+
+        img_filenames = sorted(os.listdir(images_path))
+        mask_filenames = sorted(os.listdir(masks_path))
+
+        # Read in the bounding boxes
+        bb_df = pd.read_csv("/home/skk8kc/Documents/Capstone/data/ORIGA/bounding_boxes.csv")
+        bb_df['image_path'] = bb_df['image_path'].apply(update_image_path)
+        bb_df[['x1', 'y1', 'x2', 'y2']] *= 2
+        train_imgs, temp_imgs, train_masks, temp_masks = train_test_split(
+            img_filenames, mask_filenames, test_size=0.3, random_state=42)
+
+        val_imgs, test_imgs, val_masks, test_masks = train_test_split(
+            temp_imgs, temp_masks, test_size=0.5, random_state=42)
+
+        batch_size = 4
+        n_workers = 4
+
+        # Load raw data into custom PyTorch datasets
+        train_set = GlaucomaDatasetBoundingBoxes(images_path, masks_path, train_imgs, train_masks, bb_df, input_img_size=1024)
+        val_set = GlaucomaDatasetBoundingBoxes(images_path, masks_path, val_imgs, val_masks, bb_df, input_img_size=1024)
+        test_set = GlaucomaDatasetBoundingBoxes(images_path, masks_path, test_imgs, test_masks, bb_df, input_img_size=1024)
+
+        # Load datasets into PyTorch DataLoaders
+        nice_train_loader = DataLoader(train_set, batch_size=batch_size, num_workers=n_workers, shuffle=True)
+        val_loader = DataLoader(val_set, batch_size=batch_size, num_workers=n_workers, shuffle=True)
+        test_loader = DataLoader(test_set, batch_size=batch_size, num_workers=n_workers, shuffle=True)
+
 
 
     '''checkpoint path and tensorboard'''
@@ -93,9 +147,9 @@ def main():
 
     for epoch in range(settings.EPOCH):
 
-        if epoch == 0:
-            tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
-            logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
+        # if epoch == 0:
+        #     tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
+        #     logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
 
         # training
         net.train()

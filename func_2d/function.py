@@ -54,7 +54,7 @@ def train_sam(args, net: nn.Module, optimizer, train_loader, epoch, writer):
             # input image and gt masks
             imgs = pack['image'].to(dtype = mask_type, device = GPUdevice)
             masks = pack['mask'].to(dtype = mask_type, device = GPUdevice)
-            name = pack['image_meta_dict']['filename_or_obj']
+            name = pack['image_filename']
 
             # click prompt: unsqueeze to indicate only one click, add more click across this dimension
             if 'pt' in pack:
@@ -138,15 +138,15 @@ def train_sam(args, net: nn.Module, optimizer, train_loader, epoch, writer):
 
             '''prompt encoder'''         
             with torch.no_grad():
-                if (ind%5) == 0:
-                    points=(coords_torch, labels_torch) # input shape: ((batch, n, 2), (batch, n))
-                    flag = True
-                else:
-                    points=None
-                    flag = False
-
+                # if (ind%5) == 0:
+                #     points=None # input shape: ((batch, n, 2), (batch, n))
+                #     flag = True
+                # else:
+                #     points=None
+                #     flag = False
+                flag = False
                 se, de = net.sam_prompt_encoder(
-                    points=points, #(coords_torch, labels_torch)
+                    points=None, #(coords_torch, labels_torch)
                     boxes=None,
                     masks=None,
                     batch_size=B,
@@ -289,7 +289,7 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
             to_cat_memory_pos = []
             to_cat_image_embed = []
 
-            name = pack['image_meta_dict']['filename_or_obj']
+            name = pack['image_filename']
             imgs = pack['image'].to(dtype = torch.float32, device = GPUdevice)
             masks = pack['mask'].to(dtype = torch.float32, device = GPUdevice)
 
@@ -365,16 +365,16 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
                 high_res_feats = feats[:-1]
 
                 """ prompt encoder """
-                if (ind%5) == 0:
-                    flag = True
-                    points = (coords_torch, labels_torch)
+                # if (ind%5) == 0:
+                #     flag = True
+                #     points = (coords_torch, labels_torch)
 
-                else:
-                    flag = False
-                    points = None
-
+                # else:
+                #     flag = False
+                #     points = None
+                flag = False
                 se, de = net.sam_prompt_encoder(
-                    points=points, 
+                    points=None, 
                     boxes=None,
                     masks=None,
                     batch_size=B,
