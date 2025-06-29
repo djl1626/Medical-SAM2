@@ -56,6 +56,8 @@ class SAM2ImagePredictor:
         self.mask_threshold = mask_threshold
 
         # Spatial dim for backbone feature maps
+        # If changing input image size, change these number by appropriate amount
+        # Ex: if images are 512x512, divide everything by 2.
         self._bb_feat_sizes = [
             (256, 256),
             (128, 128),

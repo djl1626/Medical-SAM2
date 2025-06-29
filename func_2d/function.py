@@ -138,13 +138,6 @@ def train_sam(args, net: nn.Module, optimizer, train_loader, epoch, writer):
 
             '''prompt encoder'''         
             with torch.no_grad():
-                # if (ind%5) == 0:
-                #     points=None # input shape: ((batch, n, 2), (batch, n))
-                #     flag = True
-                # else:
-                #     points=None
-                #     flag = False
-                flag = False
                 se, de = net.sam_prompt_encoder(
                     points=None, #(coords_torch, labels_torch)
                     boxes=None,
@@ -154,9 +147,6 @@ def train_sam(args, net: nn.Module, optimizer, train_loader, epoch, writer):
             # dimension hint for your future use
             # se: torch.Size([batch, n+1, 256])
             # de: torch.Size([batch, 256, 64, 64])
-
-
-
             
             '''train mask decoder'''       
             low_res_multimasks, iou_predictions, sam_output_tokens, object_score_logits = net.sam_mask_decoder(

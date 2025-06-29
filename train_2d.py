@@ -93,7 +93,7 @@ def main():
         '''end'''
     elif args.dataset == 'ORIGA':
         # Read in the fundus images and ground truth masks
-        # origa_path = os.path.join('home', 'skk8kc', 'Documents', 'Capstone', "data", "ORIGA")
+
         origa_path = "/home/skk8kc/Documents/Capstone/data/ORIGA"
         images_path = os.path.join(origa_path, "Images_Square")
         masks_path = os.path.join(origa_path, "Masks_Square")
